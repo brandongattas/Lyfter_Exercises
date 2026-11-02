@@ -1,3 +1,5 @@
+import re
+
 def ask_for_int(prompt_message):
 	while True:
 		try:
@@ -17,39 +19,82 @@ def ask_for_score(prompt_message):
 		except ValueError:
 			print("Invalid input. Please enter number using decimals Ex. 6.0")
 
-def ask_for_menu_option():
+def ask_for_true_or_false(prompt_message):
 	while True:
-		try:
-			value = int(input("Enter a menu option: "))
-			print("")
-
-			if 0<= value <=6:
-				return value
-			else:
-				print("Error: The number must be between 0 and 6.")
-		except ValueError:
-			print("Invalid input. Please enter number from the menu options.")
+		user_input=input(prompt_message)
+		user_input = user_input.lower()
+		if user_input in ('y','yes'):
+			return True
+		elif user_input in ('n','no'):
+			return False
 
 def get_avg_from_dict(my_dict):
-    if not my_dict:
-        return 0.0
-    return sum(my_dict.values()) / len(my_dict)
+	if not my_dict:
+		return 0.0
+	return sum(my_dict.values()) / len(my_dict)
 
 def get_avg_from_list(my_list):
 	if not my_list:
 		return 0.0
 	return sum(my_list) / len(my_list)
 
-def collect_student_details_get_list_of_dict():
+def ask_student_name():
+	while True:
+		name=input("Enter the student's full name: ").strip()
+
+		if not name:
+			print("[ERROR]: The name cannot be empty!")
+			continue
+
+		if name_has_numbers(name):
+			print("[ERROR]: The name cannot contain numbers!")
+			continue
+
+		return name.title()
+
+def name_has_numbers(name):
+	return any(char.isdigit() for char in name)
+
+def student_exists_in_section(name, section, students_list):
+    for student in students_list:
+        if (name.lower() == student['student_name'].lower() and 
+            section.lower() == student['student_section'].lower()):
+            return True
+    return False
+
+def ask_student_section():
+    while True:
+        section = input("Enter the section (Ex. 11B, max 1000): ").strip()
+
+        if not section:
+            print("[ERROR]: Section cannot be empty!")
+            continue
+
+        if not re.match(r"^\d+[a-zA-Z]+$", section):
+            print("[ERROR]: Section must start with numbers followed by a letter (Ex. 11B).")
+            continue
+
+        number_part = int(re.match(r"\d+", section).group())
+
+        if not (1 <= number_part <= 1000):
+            print("[ERROR]: The section number must be between 1 and 1000!")
+            continue
+
+        return section.upper()
+
+def collect_student_details_get_list_of_dict(students_list):
 	print("### Register students and scores.")
 	student_quantity=ask_for_int("Enter the quantity of students that will be registering: ")
 	counter=1
-	students_list=[]
+
 	while counter<=student_quantity:
 		print("")
 		print(f"Enter Student #{counter} details:")
-		student_full_name=input("Enter the student's full name: ")
-		student_section=input(f"Enter the section (Ex. 11B): ")
+		student_full_name=ask_student_name()
+		student_section=ask_student_section()
+		if student_exists_in_section(student_full_name, student_section, students_list):
+			print(f"[ERROR]: A student named '{student_full_name}' is already registered in section '{student_section.upper()}'.")
+			continue
 		spanish_score=ask_for_score("Enter the Spanish class score: ")
 		english_score=ask_for_score("Enter the English class score: ")
 		social_score=ask_for_score("Enter the Social Studies class score: ")
@@ -66,7 +111,6 @@ def collect_student_details_get_list_of_dict():
 		}
 		students_list.append(students_dict)
 		counter+=1
-	return students_list
 
 
 def view_overall_average(students_list):
@@ -114,3 +158,49 @@ def view_registered_students_details(students_list):
 			print(f"Social Studies score: {student['scores']['social']}")
 			print(f"Science class score: {student['scores']['science']}")
 			print("------------")
+
+
+def delete_student(students_list):
+	print("### Delete student ###")
+	print("")
+
+	if not students_list:
+		print("There are no registered students to remove.")
+		return
+
+	student_name_to_delete=input("Enter the name of the student to delete: ").strip().lower()
+	student_section=input("Enter the student's section: ").strip().lower()
+	found = False
+
+	for student in students_list:
+		if student['student_name'].lower()==student_name_to_delete and student['student_section'].lower()==student_section:
+			found = True
+			if ask_for_true_or_false("Student found! - Please confirm if you want to remove the student (yes/no): "):
+				students_list.remove(student)
+				print(f"Successfully removed: {student_name_to_delete} on section: {student_section}")
+			else:
+				print(f"Deletion aborted!")
+			break
+
+	if not found:
+		print(f"Could not find a student named: {student_name_to_delete} or section: {student_section}")
+
+
+def view_failed_students(students_list):
+	print("### View failed students ###")
+	print("")
+
+	if not students_list:
+		print("There are no registered students to view.")
+		return
+
+	atleast_one_failed_found=False
+
+	for student in students_list:
+		for subject, score in student['scores'].items():
+			if score < 60:
+				atleast_one_failed_found=True
+				print(f"Student name: {student['student_name']} | Section: {student['student_section']} | Failed subject: {subject.capitalize()} (Score: {score})")
+
+	if not atleast_one_failed_found:
+		print(f"No students have failed any subject. Excellent performance overall!")
