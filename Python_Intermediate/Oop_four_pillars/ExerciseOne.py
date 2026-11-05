@@ -33,8 +33,7 @@ class SavingsAccount(BankAccount):
     def withdraw_money(self, amount):
         print(f"Triying to withdraw ${amount}....")
         if (self.balance-amount) < self.min_balance:
-            print(f"[ERROR] The balance is too low: ${self.balance}, the minimum balance must be: {self.min_balance} | withdrawal canceled.")
-            return
+            raise ValueError(f"[ERROR] The balance is too low: ${self.balance}, the minimum balance must be: {self.min_balance} | withdrawal canceled.")
         return super().withdraw_money(amount)
 
 savings_account = SavingsAccount(500)
