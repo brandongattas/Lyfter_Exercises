@@ -6,6 +6,8 @@
 # de edad y arroje una excepción de no ser así.
 
 from datetime import date
+from functools import wraps
+
 class User:
     def __init__(self, name, date_of_birth):
         self.date_of_birth = date_of_birth
@@ -22,11 +24,30 @@ class User:
         return age
 
 def adults_only(func):
-    def wrapper(user):
-        print(f"Attempting operation for: {user.name} with age: {user.age}")
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        user = None
+
+        for arg in args:
+            if isinstance(arg, User):
+                user = arg
+                break
+
+        if user is None:
+            for value in kwargs.values():
+                if isinstance(value, User):
+                    user=value
+                    break
+
+        if user is None:
+            raise TypeError(f"[ERROR] A User instance is required.")
+
+        print(f"Attepting operation for {user.name}, with age: {user.age}")
+
         if user.age < 18:
             raise ValueError(f"[ERROR] {user.name}, you must be an adult for this operation.")
-        return func(user)
+        
+        return func(*args, **kwargs)
 
     return wrapper
 
@@ -47,4 +68,9 @@ print("")
 try:
     print(buy_alcohol(minor_user))
 except ValueError as e:
+    print(e)
+
+try:
+    print(buy_alcohol("Brandon"))
+except TypeError as e:
     print(e)
