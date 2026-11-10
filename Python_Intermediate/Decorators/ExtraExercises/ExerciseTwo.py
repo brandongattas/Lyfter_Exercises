@@ -13,13 +13,16 @@
 
 from functools import wraps
 
-USER_LOGGED_IN=True
+class AuthenticationError(Exception):
+    pass
+
+user_logged_in=True
 
 def requires_login(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        if not USER_LOGGED_IN:
-            raise ValueError("User not authenticated.")
+        if not user_logged_in:
+            raise AuthenticationError("[ERROR] User not authenticated.")
         return func(*args, **kwargs)
     return wrapper
 
@@ -29,5 +32,11 @@ def view_profile():
 
 try:
     view_profile()
-except ValueError as e:
+except AuthenticationError as e:
+    print(e)
+
+try:
+    user_logged_in=False
+    view_profile()
+except AuthenticationError as e:
     print(e)

@@ -22,11 +22,22 @@ def log_call(func):
     def wrapper(*args, **kwargs):
         today_date = datetime.now()
         func_name = func.__name__
-        result = func(*args, **kwargs)
 
-        print(f"func:{func_name} - args: {args} - kwargs:{kwargs} - [{today_date}] - Result: {result}")
+        args_string = ", ".join(repr(arg) for arg in args)
 
-        return result
+        kwargs_string = ", ".join(
+                        f"{k}={repr(v)}" for k, v in kwargs.items()
+                    )
+        
+        try:
+            result = func(*args, **kwargs)
+            
+            print(f"func:{func_name} - args: {args_string} - kwargs:{kwargs_string} - [{today_date}] - Result: {result}")
+            
+            return result
+        except Exception as e:
+            print(f"func:{func_name} - args: {args_string} - kwargs:{kwargs_string} - [{today_date}] - FAILED: {e}")
+            raise
     
     return wrapper
 
@@ -34,25 +45,66 @@ def validate_numbers(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         for arg in args:
-            if not isinstance(arg, (int, float)):
-                raise ValueError("All the values must be numeric.")
+            if isinstance(arg, bool) or not isinstance(arg, (int, float)):
+                raise TypeError("[ERROR] All the values must be numeric.")
 
         for value in kwargs.values():
-            if not isinstance(value, (int, float)):
-                raise ValueError("All the values must be numeric.")
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise TypeError("[ERROR] All the values must be numeric.")
             
         return func(*args, **kwargs)
     
     return wrapper
 
 
-@validate_numbers
 @log_call
+@validate_numbers
 def multiply(n1, n2):
-    print("Executing....")
     return n1*n2
 
+print("------")
 try:
-    multiply(5, "5")
-except ValueError as e:
-    print(e)
+    result = multiply(5, '5')
+    print(f"Result {result}")
+except TypeError as e:
+    pass
+
+print("")
+print("------")
+try:
+    result = multiply(5, 5)
+    print(f"Result {result}")
+except TypeError as e:
+    pass
+
+print("")
+print("------")
+try:
+    result = multiply(True, 5)
+    print(f"Result {result}")
+except TypeError as e:
+    pass
+
+print("")
+print("------")
+try:
+    result = multiply(n1=5, n2=5)
+    print(f"Result {result}")
+except TypeError as e:
+    pass
+
+print("")
+print("------")
+try:
+    result = multiply(n1=5, n2='5')
+    print(f"Result {result}")
+except TypeError as e:
+    pass
+
+print("")
+print("------")
+try:
+    result = multiply(2.85, 5.25)
+    print(f"Result {result}")
+except TypeError as e:
+    pass
